@@ -108,6 +108,8 @@ Private Declare Function SwitchDesktop Lib "User32.dll" (ByVal hDesktop As Long)
 
 
 'The constants and structures used by this program:
+
+'This structure defines a process.
 Public Type ProcessStr
    Id As Long             'Defines a process' id.
    Path As String         'Defines a process' path.
@@ -120,42 +122,42 @@ Private Const NO_ID As Long = 0            'Defines the absence of an identifica
 Private Const MAX_PATH As Long = 260       'Defines the maximum number of characters allowed for a file path.
 Private Const MAX_STRING As Long = 65535   'Defines the maximum length allowed for a string.
 
-'This procedure activates the specified desktop.
+'This procedure activates the specified desktop and starts another instance of this program displayed on it.
 Public Sub ActivateDesktop(Desktop As String)
 On Error GoTo ErrorTrap
 Dim CurrentDesktopH As Long
 Dim DesktopH As Long
 Dim ProcessId As Long
 
-      If Dir$(GetFullProgramPath(), vbArchive Or vbHidden Or vbNormal Or vbReadOnly Or vbSystem) = vbNullString Then
-         MsgBox "Cannot find """ & GetFullProgramPath() & """.", vbExclamation
-      Else
-         CurrentDesktopH = CheckForError(GetThreadDesktop(App.ThreadID))
-         DesktopH = CheckForError(OpenDesktopA(Desktop, CLng(0), CLng(False), GENERIC_ALL))
-        
-         If Not DesktopH = NO_HANDLE Then
-            DesktopProcessList , , , InitializeList:=True
-            CheckForError EnumDesktopWindows(DesktopH, AddressOf WindowHandler, CLng(0))
-      
-            If SearchProcessList(GetProcessPath(CheckForError(GetCurrentProcessId()))) = NO_INDEX Then
-               ProcessId = StartProcess(GetFullProgramPath(), Desktop).dwProcessId
-               If Not ProcessId = NO_ID Then
-                  CheckForError SwitchDesktop(DesktopH)
-                  WaitForProcess ProcessId
-               End If
+   If Dir$(GetFullProgramPath(), vbArchive Or vbHidden Or vbNormal Or vbReadOnly Or vbSystem) = vbNullString Then
+      MsgBox "Cannot find """ & GetFullProgramPath() & """.", vbExclamation
+   Else
+      CurrentDesktopH = CheckForError(GetThreadDesktop(App.ThreadID))
+      DesktopH = CheckForError(OpenDesktopA(Desktop, CLng(0), CLng(False), GENERIC_ALL))
+     
+      If Not DesktopH = NO_HANDLE Then
+         DesktopProcessList , , , InitializeList:=True
+         CheckForError EnumDesktopWindows(DesktopH, AddressOf WindowHandler, CLng(0))
+   
+         If SearchProcessList(GetProcessPath(CheckForError(GetCurrentProcessId()))) = NO_INDEX Then
+            ProcessId = StartProcess(GetFullProgramPath(), Desktop).dwProcessId
+            If Not ProcessId = NO_ID Then
+               CheckForError SwitchDesktop(DesktopH)
+               WaitForProcess ProcessId
             End If
-         
-            CheckForError CloseDesktop(DesktopH)
-            CheckForError SwitchDesktop(CurrentDesktopH)
          End If
+      
+         CheckForError CloseDesktop(DesktopH)
+         CheckForError SwitchDesktop(CurrentDesktopH)
       End If
+   End If
       
 EndProcedure:
-      Exit Sub
+   Exit Sub
       
 ErrorTrap:
-      If HandleError() = vbRetry Then Resume
-      If HandleError(DoNotAsk:=True) Then Resume EndProcedure
+   If HandleError() = vbRetry Then Resume
+   If HandleError(DoNotAsk:=True) Then Resume EndProcedure
 End Sub
 
 
